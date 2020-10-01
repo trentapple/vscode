@@ -71,7 +71,7 @@ class SCMInput implements ISCMInput {
 	}
 	private readonly _onDidChangeValidateInput = new Emitter<void>();
 	readonly onDidChangeValidateInput: Event<void> = this._onDidChangeValidateInput.event;
-	private history: HistoryNavigator<string>;
+	private historyNavigator: HistoryNavigator<string>;
 	constructor(
 		readonly repository: ISCMRepository,
 		@IStorageService private storageService: IStorageService
@@ -79,29 +79,29 @@ class SCMInput implements ISCMInput {
 		const key = `scm/input:${this.repository.provider.label}:${this.repository.provider.rootUri?.path}`;
 		let result = this.storageService.get(key, StorageScope.WORKSPACE, '[]');
 		if (result) {
-			this.history = new HistoryNavigator(JSON.parse(result), 50);
+			this.historyNavigator = new HistoryNavigator(JSON.parse(result), 50);
 		} else {
-			this.history = new HistoryNavigator([], 50);
+			this.historyNavigator = new HistoryNavigator([], 50);
 		}
 	}
 
 	save(): void {
-		this.history.add(this.value);
+		this.historyNavigator.add(this.value);
 		if (this.repository.provider.rootUri) {
 			const key = `scm/input:${this.repository.provider.label}:${this.repository.provider.rootUri.path}`;
-			this.storageService.store(key, JSON.stringify(this.history.getHistory()), StorageScope.WORKSPACE);
+			this.storageService.store(key, JSON.stringify(this.historyNavigator.getHistory()), StorageScope.WORKSPACE);
 		}
 	}
 
 	showNextValue(): void {
-		let next = this.history.next();
+		let next = this.historyNavigator.next();
 		if (next) {
 			this.value = next;
 		}
 	}
 
 	showPreviousValue(): void {
-		let prev = this.history.previous();
+		let prev = this.historyNavigator.previous();
 		if (prev) {
 			this.value = prev;
 		}
