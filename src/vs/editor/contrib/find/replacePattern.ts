@@ -312,6 +312,46 @@ export function parseReplaceString(replaceString: string): ReplacePattern {
 				caseOps.length = 0;
 				continue;
 			}
+			
+			if (nextChCode === CharCode.OpenCurlyBrace) {
+				// ${}
+
+				let matchIndex = nextChCode - CharCode.Digit0;
+
+				// peek next char to probe for ${nn}
+				if (i + 1 < len) {
+					let nextNextChCode = replaceString.charCodeAt(i + 1);
+					if (CharCode.Digit1 <= nextNextChCode && nextNextChCode <= CharCode.Digit9) {
+						// ${n}
+
+						matchIndex = nextNextChCode - CharCode.Digit0;
+
+						if (i + 2 < len) {
+							let nextNextNextChCode = replaceString.charCodeAt(i + 2);
+							if (CharCode.Digit0 <= nextNextNextChCode && nextNextNextChCode <= CharCode.Digit9) {
+								// ${nn}
+
+								// move to next char
+								i++;
+								matchIndex = matchIndex * 10 + (nextNextNextChCode - CharCode.Digit0);
+
+								// TODO: Check if close curly brace before emit match index
+								if (true) {
+									result.emitUnchanged(i - 2);
+									result.emitMatchIndex(matchIndex, i + 2, caseOps);
+									caseOps.length = 0;
+									continue;
+								}
+							} else if (nextChCode === CharCode.CloseCurlyBrace) {
+								result.emitUnchanged(i - 1);
+								result.emitMatchIndex(matchIndex, i + 1, caseOps);
+								caseOps.length = 0;
+								continue;
+							}
+						}
+					}
+				}
+			}
 
 			if (CharCode.Digit1 <= nextChCode && nextChCode <= CharCode.Digit9) {
 				// $n
@@ -320,13 +360,13 @@ export function parseReplaceString(replaceString: string): ReplacePattern {
 
 				// peek next char to probe for $nn
 				if (i + 1 < len) {
-					let nextNextChCode = replaceString.charCodeAt(i + 1);
-					if (CharCode.Digit0 <= nextNextChCode && nextNextChCode <= CharCode.Digit9) {
+					let nextNextNextChCode = replaceString.charCodeAt(i + 1);
+					if (CharCode.Digit0 <= nextNextNextChCode && nextNextNextChCode <= CharCode.Digit9) {
 						// $nn
 
 						// move to next char
 						i++;
-						matchIndex = matchIndex * 10 + (nextNextChCode - CharCode.Digit0);
+						matchIndex = matchIndex * 10 + (nextNextNextChCode - CharCode.Digit0);
 
 						result.emitUnchanged(i - 2);
 						result.emitMatchIndex(matchIndex, i + 1, caseOps);
